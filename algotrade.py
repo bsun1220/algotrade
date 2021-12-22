@@ -23,6 +23,7 @@ class MeanReversionAlgorithmFramework(QCAlgorithm):
         self.first_month = True
 
         self.Schedule.On(self.DateRules.MonthStart("SPY"), self.TimeRules.At(0, 0), Action(self.Monthly_Rebalance))
+        self.Schedule.On(self.DateRules.MonthStart("SPY"), self.TimeRules.At(0, 0), Action(self.set_leverage))
         self.Schedule.On(self.DateRules.EveryDay("SPY"), self.TimeRules.BeforeMarketClose("SPY", 303),
                          Action(self.get_prices))
         self.Schedule.On(self.DateRules.EveryDay("SPY"), self.TimeRules.BeforeMarketClose("SPY", 302),
@@ -121,5 +122,4 @@ class MeanReversionAlgorithmFramework(QCAlgorithm):
                         self.existingshort += 1
                     elif (current_quantile < 5) and (symbol not in self.longlist):
                         self.SetHoldings(symbol, 0)
-
 
