@@ -21,7 +21,11 @@ class BuyOnGapModel(QCAlgorithm):
         self.rebalance_universe = True
 
         self.longs = []
+        self.longsret = []
         self.shorts = []
+        self.shortsret = []
+
+        self.SetRiskManagement(MaximumDrawdownPercentPerSecurity(0.05))
 
         self.Schedule.On(self.DateRules.MonthStart("SPY"), self.TimeRules.At(0, 0), Action(self.UniverseRebalance))
         self.Schedule.On(self.DateRules.MonthStart("SPY"), self.TimeRules.At(0, 0), Action(self.SetLeverage))
@@ -62,7 +66,9 @@ class BuyOnGapModel(QCAlgorithm):
         if self.universe is None: return
 
         shortlist = []
+        short_ret = []
         longlist = []
+        long_ret = []
 
         history = self.History(self.universe, 90, Resolution.Daily)
 
@@ -81,14 +87,18 @@ class BuyOnGapModel(QCAlgorithm):
                     ma_20 = close_90[-20:].mean()
                     if open > ma_20:
                         longlist.append(i)
+                        long_ret.append(current_ret)
 
                 elif current_ret > mean_ret + std_ret:
                     ma_20 = close_90[-20:].mean()
                     if open < ma_20:
                         shortlist.append(i)
+                        short_ret.append(current_ret)
 
         self.longs = longlist
         self.shorts = shortlist
+        self.longsret = long_ret
+        self.shortsret = short_ret
 
     def PortfolioWeightings(self):
         pass
@@ -113,8 +123,21 @@ class BuyOnGapModel(QCAlgorithm):
             if (symbol in self.longs or symbol in self.shorts):
                 self.SetHoldings(symbol, 0)
 
+        self.longs = []
+        self.shorts = []
+        self.longsret = []
+        self.shortsret = []
+
     def Long(self):
         if (self.universe is None) or len(self.longs) == 0: return
+
+        length = min(10, len(self.longs))
+
+        sort_ind = sorted(range(len(self.longsret)),
+                          key=lambda k: self.longsret[k])
+
+        self.longs = [self.longs[i] for i in sort_ind]
+        self.longs = self.longs[:length]
 
         for symbol in self.longs:
             self.AddEquity(symbol, Resolution.Minute)
@@ -123,10 +146,17 @@ class BuyOnGapModel(QCAlgorithm):
     def Short(self):
         if (self.universe is None) or len(self.shorts) == 0: return
 
+        length = min(10, len(self.shorts))
+
+        sort_ind = sorted(range(len(self.shortsret)),
+                          key=lambda k: self.shortsret[k])
+
+        self.shorts = [self.shorts[i] for i in sort_ind]
+        self.shorts = self.shorts[:length]
+
         for symbol in self.shorts:
             self.AddEquity(symbol, Resolution.Minute)
             self.SetHoldings(symbol, self.short_leverage / len(self.shorts))
 
     def RiskManagement(self):
         pass
-
