@@ -149,7 +149,7 @@ class BuyOnGapModel(QCAlgorithm):
         length = min(10, len(self.shorts))
 
         sort_ind = sorted(range(len(self.shortsret)),
-                          key=lambda k: self.shortsret[k])
+                          key=lambda k: self.shortsret[k], reverse=True)
 
         self.shorts = [self.shorts[i] for i in sort_ind]
         self.shorts = self.shorts[:length]
